@@ -181,7 +181,7 @@ int main() {
         double x, y, z;
         coordinates_from_tuple(x,y, z, detectors[i]);
         std::string title = "Detector inside the ";
-        title += (z <= 1) ? "air" : "Al";
+        title += (z <= 0.5) ? "air" : "Al";
         detector_statistics_plot(names[i], title);
         detector_plot(names[i] + "_density", "Density flow through the " + title);
     }
