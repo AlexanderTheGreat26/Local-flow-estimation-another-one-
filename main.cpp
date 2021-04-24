@@ -27,7 +27,7 @@
 #include <stdexcept>
 
 
-const int N = 1000; //Number of points. //Do not use more than 0.5e4 on old computers!
+const int N = 1.0e4; //Number of points. //Do not use more than 0.5e4 on old computers!
 
 const double R = 1;
 const double pi = 3.14159265359;
@@ -92,12 +92,11 @@ std::vector<std::tuple<double, double, double>> sigmas_Al;
 
 std::tuple<double, double, double> interpolation_for_single_particle (int& group, double& E,
                                                                       std::vector<std::tuple<double, double, double>>& sigmas);
+const double h = 0.5;
 
-std::vector<coord> detectors = {std::make_tuple(0, 0, 0.5),
-                                std::make_tuple(0, 0, 1),
-                                std::make_tuple(0, 0, 1.5),
-                                std::make_tuple(0, -1, 0.5),
-                                std::make_tuple(1, 0, 0.5)};
+std::vector<coord> detectors = {std::make_tuple(0, 0, 0.25*h),
+                                std::make_tuple(0, 0, 0.5*h),
+                                std::make_tuple(0, 0, 1.5*h)};
 
 const int detectors_number = detectors.size();
 
@@ -181,7 +180,7 @@ int main() {
         double x, y, z;
         coordinates_from_tuple(x,y, z, detectors[i]);
         std::string title = "Detector inside the ";
-        title += (z <= 0.5) ? "air" : "Al";
+        title += (z <= h) ? "air" : "Al";
         detector_statistics_plot(names[i], title);
         detector_plot(names[i] + "_density", "Density flow through the " + title);
     }
@@ -196,7 +195,7 @@ std::vector<coord> birth_of_photons () {
     std::vector <coord> coords;
     double x, y, a, b, z = 0;
     std::uniform_real_distribution<> dis(0.0, 1.0);
-    for(int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         do {
             a = 1;
             b = a / 2.0;
@@ -219,12 +218,21 @@ void data_file_creation (std::string DataType, std::vector<coord>& xx) {
     fout.close();
 }
 
+int norm (std::vector<std::pair<int, int>>& data) {
+    int max_count = 0;
+    for (int i = 0; i < data.size(); i++)
+        if (data[i].second > max_count)
+            max_count = data[i].second;
+    return max_count;
+}
+
 void data_file_creation (std::string DataType, std::vector<std::pair<int, int>>& data) {
     std::ofstream fout;
     DataType = PATH + DataType;
     fout.open(DataType);
+    double n = norm(data);
     for (int i = 0; i < data.size(); i++)
-        fout << std::get<0>(data[i]) << '\t' << std::get<1>(data[i]) << std::endl;
+        fout << std::get<0>(data[i]) << '\t' << std::get<1>(data[i]) / n << std::endl;
     fout.close();
 }
 
@@ -561,21 +569,21 @@ void flow_detection (double& sigma_sum, std::vector<std::pair<double, std::strin
             coordinates_from_tuple(x_det, y_det, z_det, detectors[i]);
             coord tau = vector_creation(particle_coordinate, detectors[i]);
             double distance = abs_components(tau);
-            if (z_det <= 1) { // We have to include particles only inside the box.
+            if (z_det <= h) { // We have to include particles only inside the box.
                 if (environment == "air") {
                     groups_in_detector.at(i).emplace_back(group);
                     double contribution = (density_estimation(W, std::get<0>(sigmas_air[group]), std::get<0>(sigmas_air[group+1]),
                                                               group, i, distance, particle_sigma));
                     particle_eta[i].emplace_back(std::make_pair(E, contribution));
-                } else continue;
+                }
             } else { // Only outside particles.
                 if (environment == "Al") {
-                    if (E == 2.0e6) continue;
+                    if (E == E_0) continue;
                     groups_in_detector.at(i).emplace_back(group);
                     double contribution = density_estimation(W, std::get<0>(sigmas_Al[group]), std::get<0>(sigmas_Al[group+1]),
                                                              group, i, distance, particle_sigma);
                     particle_eta[i].emplace_back(std::make_pair(E, contribution));
-                } else continue;
+                }
             }
         }
     } else E = 0;
@@ -622,13 +630,13 @@ std::array<std::vector<coord>, N> interactions (std::vector<coord>& points) {
                     coordinates_from_tuple(x_det, y_det, z_det, detectors[j]);
                     coord tau = vector_creation(A, detectors[j]);
                     double distance = abs_components(tau);
-                    if (z_det <= 1) { // Just for born including.
+                    if (z_det < 0.5) { // Just for born including.
                         double contribution = (density_estimation(W, std::get<0>(sigmas_air[sigmas_air.size() - 2]),
                                                                   std::get<0>(sigmas_air[sigmas_air.size() - 1]),
                                                                   number_of_energy_groups - 1, j, distance,
                                                                   sigmas_air[sigmas_air.size() - 1]));
                         particle_eta[j].emplace_back(std::make_pair(E_0, contribution));
-                    } else continue;
+                    }
                 }
                 flag = true;
             }
