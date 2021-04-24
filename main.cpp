@@ -664,7 +664,7 @@ void plot(std::array<std::vector<coord>, N>& points) {
                                       "set key off",
                                       "set ticslevel 0",
                                       "set border 4095",
-                                      //"splot \'" + PATH + "detectors\' u 1:2:3 lw 3 lt rgb 'black'",
+                                      "splot \'" + PATH + "detectors\' u 1:2:3 lw 3 lt rgb 'black'",
                                       //"splot \'" + PATH + "cap\' u 1:2:3 w lines lw 2 lt rgb 'black'",
                                       //"splot \'" + PATH + "cap\' u 1:2:3 w boxes lw 2 lt rgb 'black'",
                                       "set parametric",
