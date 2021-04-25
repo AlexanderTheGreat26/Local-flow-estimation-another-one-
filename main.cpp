@@ -27,7 +27,7 @@
 #include <stdexcept>
 
 
-const int N = 1.0e4; //Number of points. //Do not use more than 0.5e4 on old computers!
+const int N = 3.0e4; //Number of points. //Do not use more than 0.5e4 on old computers!
 
 const double R = 1;
 const double pi = 3.14159265359;
@@ -73,7 +73,6 @@ int energy_group(double& E);
 std::array<std::vector<coord>, N> interactions (std::vector<coord>& points);
 
 double cos_t (coord& A, coord& B, coord& C);
-
 
 void plot(std::array<std::vector<coord>, N>& points);
 
@@ -230,7 +229,7 @@ void data_file_creation (std::string DataType, std::vector<std::pair<int, int>>&
     std::ofstream fout;
     DataType = PATH + DataType;
     fout.open(DataType);
-    double n = norm(data);
+    double n = (DataType.find("_2") != std::string::npos) ? N : norm(data);
     for (int i = 0; i < data.size(); i++)
         fout << std::get<0>(data[i]) << '\t' << std::get<1>(data[i]) / n << std::endl;
     fout.close();
@@ -250,7 +249,7 @@ void data_file_creation (std::string DataType, std::vector<std::pair<double, dou
     DataType = PATH + DataType;
     fout.open(DataType);
     for (int i = 0; i < data.size(); i++)
-        fout << std::get<0>(data[i]) << '\t' << std::get<1>(data[i]) << std::endl;
+        fout << std::get<0>(data[i]) / 1.0e6 << '\t' << std::get<1>(data[i]) << std::endl;
     fout.close();
 }
 
@@ -382,8 +381,8 @@ std::vector<double> quadratic_equation_solve (double& a, double& b, double& c) {
     double D = std::pow(b, 2) - 4*a*c;
     double t_1, t_2;
     if (D >= 0 && !std::isnan(D)) {
-        t_1 = (-b + std::sqrt(sqrt(D))) / 2 / a;
-        t_2 = (-b - std::sqrt(sqrt(D))) / 2 / a;
+        t_1 = (-b + std::sqrt(sqrt(D))) / 2.0 / a;
+        t_2 = (-b - std::sqrt(sqrt(D))) / 2.0 / a;
     } else
         t_1 = t_2 = 0;
     return {t_1, t_2};
@@ -653,9 +652,9 @@ void plot(std::array<std::vector<coord>, N>& points) {
     FILE *gp = popen("gnuplot  -persist", "w");
     if (!gp)
         throw std::runtime_error("Error opening pipe to GNUplot.");
-    std::vector<std::string> stuff = {//"set term pdf",
-                                      //"set output \'" + PATH + "Hedgehog.pdf\'",
-                                      "set term pop",
+    std::vector<std::string> stuff = {"set term pdf",
+                                      "set output \'" + PATH + "Hedgehog.pdf\'",
+                                      //"set term pop",
                                       "set multiplot",
                                       "set grid xtics ytics ztics",
                                       "set xrange [-1:1]",
@@ -665,8 +664,6 @@ void plot(std::array<std::vector<coord>, N>& points) {
                                       "set ticslevel 0",
                                       "set border 4095",
                                       "splot \'" + PATH + "detectors\' u 1:2:3 lw 3 lt rgb 'black'",
-                                      //"splot \'" + PATH + "cap\' u 1:2:3 w lines lw 2 lt rgb 'black'",
-                                      //"splot \'" + PATH + "cap\' u 1:2:3 w boxes lw 2 lt rgb 'black'",
                                       "set parametric",
                                       "set urange [0:2*pi]",
                                       "set vrange [0:0.5]",
@@ -862,14 +859,14 @@ void detector_statistics_plot (std::string data, std::string& title) {
     FILE *gp = popen("gnuplot  -persist", "w");
     if (!gp)
         throw std::runtime_error("Error opening pipe to GNUplot.");
-    std::vector<std::string> stuff = {"set term svg",
-                                      "set output \'" + data + ".svg\'",
+    std::vector<std::string> stuff = {"set term eps",
+                                      "set output \'" + data + ".eps\'",
                                       "set key off",
                                       "set grid xtics ytics",
                                       "set xlabel \'Number of group\'",
                                       "set ylabel \'Contributed particles count\'",
                                       "set title \'" + title + "\'",
-                                      //"set yrange [0:" + std::to_string(N) + "]",
+            //"set yrange [0:" + std::to_string(N) + "]",
                                       "set xrange [0:" + std::to_string(number_of_energy_groups) + "]",
                                       "set boxwidth 0.5",
                                       "set style fill solid",
@@ -916,12 +913,12 @@ void detector_plot (std::string data, std::string title) {
     FILE *gp = popen("gnuplot  -persist", "w");
     if (!gp)
         throw std::runtime_error("Error opening pipe to GNUplot.");
-    std::vector<std::string> stuff = {"set term svg",
-                                      "set output \'" + data + ".svg\'",
+    std::vector<std::string> stuff = {"set term eps",
+                                      "set output \'" + data + ".eps\'",
                                       "set key off",
                                       "set grid xtics ytics",
-                                      "set xlabel \'E, eV\'",
-                                      "set ylabel \'Density, 1/m^2\'",
+                                      "set xlabel \'E, MeV\'",
+                                      "set ylabel \'Contribution to density, 1/m^2\'",
                                       "set title \'" + title + "\'",
                                       "plot \'" + data + "\' using 1:2 with lines",
                                       "set terminal pop",
